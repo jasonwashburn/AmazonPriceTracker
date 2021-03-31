@@ -134,6 +134,11 @@ def remove_product():
 
 
 def check_prices():
+    """
+    Checks the products listed in products.json for price drops. If the current price is less than the target price
+    an email alert is sent.
+    :return: True if successful, otherwise False
+    """
     try:
         with open("products.json", 'r') as data_file:
             data = json.load(data_file)
@@ -154,9 +159,15 @@ def check_prices():
                        f"Target Price: {data[product]['target_price']} Current Price: {product_info[1]}"
     if alerts_exist:
         send_email(to_address=TARGET_EMAIL, subject="Price Drop Alert", message=message)
+    return True
 
 
 def main():
+    """
+    usage: main.py [-h] {add,delete,list,check}
+
+    :return:
+    """
     parser = argparse.ArgumentParser()
     parser.add_argument("action", help="The action to perform.", choices=['add', 'delete', 'list', 'check'])
 
