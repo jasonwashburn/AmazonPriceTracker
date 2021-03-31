@@ -43,7 +43,12 @@ def get_product_info(product_address):
     response = requests.get(product_address, headers=headers)
     soup = BeautifulSoup(response.text, "lxml")
     product_title = soup.find("span", id="productTitle").get_text(strip=True)
-    current_price = (float(soup.find("span", id="priceblock_ourprice").get_text().split("$")[1]))
+
+    if soup.find("span", id="priceblock_saleprice") is not None:
+        current_price = float(soup.find("span", id="priceblock_saleprice").get_text().split("$")[1])
+    else:
+        current_price = float(soup.find("span", id="priceblock_ourprice").get_text().split("$")[1])
+
     return product_title, current_price
 
 
@@ -134,11 +139,21 @@ def check_prices():
             data = json.load(data_file)
     except FileNotFoundError:
         print("products.json not found, you are not tracking any products.")
-    else:
-        for index, product in enumerate(data):
-            product_info = get_product_info(data[product]['link'])
-            print(f"#{index} - {product}")
-            print(f"Target Price: {data[product]['target_price']} Current Price: {product_info[1]}")
+        return False
+    message = "Price Alerts:\n"
+    alerts_exist = False
+    for index, product in enumerate(data):
+        product_info = get_product_info(data[product]['link'])
+        print(f"#{index} - {product}")
+        print(f"Target Price: {data[product]['target_price']} Current Price: {product_info[1]}")
+
+        if product_info[1] <= data[product]['target_price']:
+            alerts_exist = True
+            message += f"{product}\n" \
+                       f"{data[product]['link']}\n" \
+                       f"Target Price: {data[product]['target_price']} Current Price: {product_info[1]}"
+    if alerts_exist:
+        send_email(to_address=TARGET_EMAIL, subject="Price Drop Alert", message=message)
 
 
 def main():
